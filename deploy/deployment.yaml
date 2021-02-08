@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memcached-validating-webhook-deployment
+  namespace: memcached
+  labels:
+    app: memcached-validating-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: memcached-validating-webhook
+  template:
+    metadata:
+      labels:
+        app: memcached-validating-webhook
+    spec:
+      containers:
+        - name: memcached-validating-webhook
+          image: azssi/memcached-validating-webhook:latest
+          imagePullPolicy: IfNotPresent
+          args:
+          - -tlsCertFile=/etc/webhook/certs/cert.pem
+          - -tlsKeyFile=/etc/webhook/certs/key.pem
+          - -alsologtostderr
+          - -v=4
+          - 2>&1
+          volumeMounts:
+          - name: webhook-certs
+            mountPath: /etc/webhook/certs
+            readOnly: true
+          - name: webhook-config
+            mountPath: /etc/webhook/config
+      volumes:
+      - name: webhook-certs
+        secret:
+          secretName: memcached-validating-webhook-certs
+      - name: webhook-config
+        configMap:
+          name: memcached-validating-webhook-configmap

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: memcached-validating-webhook-svc
+  namespace: memcached
+  labels:
+    app: memcached-validating-webhook
+spec:
+  ports:
+  - port: 443
+    targetPort: 8443
+  selector:
+    app: memcached-validating-webhook
