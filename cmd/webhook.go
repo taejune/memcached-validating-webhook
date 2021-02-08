@@ -1,18 +1,18 @@
 package main
 
 import (
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 
 	"github.com/golang/glog"
 	"k8s.io/api/admission/v1beta1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/kubernetes/pkg/apis/core/v1"
 
 	"github.com/taejune/memcached-operator/pkg/apis"
@@ -21,11 +21,21 @@ import (
 	tmaxv1alpha1 "github.com/taejune/memcached-operator/pkg/apis/tmax/v1alpha1"
 )
 
+var (
+	runtimeScheme = runtime.NewScheme()
+	codecs        = serializer.NewCodecFactory(runtimeScheme)
+	deserializer  = codecs.UniversalDeserializer()
+)
+
+
 var ignoredNamespaces = []string{
 	metav1.NamespaceSystem,
 	metav1.NamespacePublic,
 }
 
+const (
+	admissionWebhookAnnotationStatusKey = "memcached-validating-webhook/status"
+)
 type WebhookServer struct {
 	server        *http.Server
 }
@@ -44,12 +54,19 @@ type patchOperation struct {
 	Value interface{} `json:"value,omitempty"`
 }
 
+func init() {
+	_ = corev1.AddToScheme(runtimeScheme)
+	_ = admissionregistrationv1beta1.AddToScheme(runtimeScheme)
+	// defaulting with webhooks:
+	// https://github.com/kubernetes/kubernetes/issues/57982
+	_ = v1.AddToScheme(runtimeScheme)
+}
+
 // Check whether the target resoured need to be mutated
 func mutationRequired(ignoredList []string, obj *tmaxv1alpha1.Memcached) bool {
 	// skip special kubernete system namespaces
 	for _, namespace := range ignoredList {
-		if metadata.Namespace == namespace {
-			glog.Infof("Skip mutation for %v for it's in special namespace:%v", metadata.Name, metadata.Namespace)
+		if obj.metadata.Namespace == namespace {
 			return false
 		}
 	}
@@ -62,7 +79,6 @@ func mutationRequired(ignoredList []string, obj *tmaxv1alpha1.Memcached) bool {
 		required = false
 	}
 
-	glog.Infof("Mutation policy for %v/%v: status: %q required:%v", metadata.Namespace, metadata.Name, status, required)
 	return required
 }
 
@@ -102,7 +118,7 @@ func createPatch(memcached *tmaxv1alpha1.Memcached, annotations map[string]strin
 	var patch []patchOperation
 
 	patch = append(patch, updateStatus(tmaxv1alpha1.DEPLOY_UNDEFINED, "/status/status")...)
-	patch = append(patch, updateAnnotation(pod.Annotations, annotations)...)
+	patch = append(patch, updateAnnotation(memcached.Annotations, annotations)...)
 
 	return json.Marshal(patch)
 }

@@ -11,7 +11,6 @@ import (
 	"syscall"
 
 	"github.com/golang/glog"
-	
 )
 
 func main() {
