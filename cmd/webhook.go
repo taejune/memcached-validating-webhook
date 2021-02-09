@@ -9,15 +9,12 @@ import (
 	"github.com/golang/glog"
 	"k8s.io/api/admission/v1beta1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/kubernetes/pkg/apis/core/v1"
 
-	"github.com/taejune/memcached-operator/pkg/apis"
-	"github.com/taejune/memcached-operator/pkg/controller"
-	"github.com/taejune/memcached-operator/version"
 	tmaxv1alpha1 "github.com/taejune/memcached-operator/pkg/apis/tmax/v1alpha1"
 )
 
@@ -27,7 +24,6 @@ var (
 	deserializer  = codecs.UniversalDeserializer()
 )
 
-
 var ignoredNamespaces = []string{
 	metav1.NamespaceSystem,
 	metav1.NamespacePublic,
@@ -36,8 +32,9 @@ var ignoredNamespaces = []string{
 const (
 	admissionWebhookAnnotationStatusKey = "memcached-validating-webhook/status"
 )
+
 type WebhookServer struct {
-	server        *http.Server
+	server *http.Server
 }
 
 // Webhook Server parameters
@@ -60,17 +57,18 @@ func init() {
 	// defaulting with webhooks:
 	// https://github.com/kubernetes/kubernetes/issues/57982
 	_ = v1.AddToScheme(runtimeScheme)
+	_ = tmaxv1alpha1.SchemeBuilder.AddToScheme(runtimeScheme)
 }
 
 // Check whether the target resoured need to be mutated
 func mutationRequired(ignoredList []string, obj *tmaxv1alpha1.Memcached) bool {
 	// skip special kubernete system namespaces
 	for _, namespace := range ignoredList {
-		if obj.metadata.Namespace == namespace {
+		if obj.Namespace == namespace {
 			return false
 		}
 	}
-	
+
 	// determine whether to perform mutation based on annotation for the target resource
 	var required bool
 	if obj.Status.Status == "" {
@@ -104,10 +102,10 @@ func updateAnnotation(target map[string]string, added map[string]string) (patch 
 	return patch
 }
 
-func updateStatus(status tmaxv1alpha1.DEPLOY_STATUS, basePath string) (patch []patchOperation) {
+func updateStatus(value tmaxv1alpha1.DEPLOY_STATUS, basePath string) (patch []patchOperation) {
 	patch = append(patch, patchOperation{
 		Op:    "replace",
-		Path:  path,
+		Path:  basePath,
 		Value: value,
 	})
 	return patch
@@ -148,7 +146,7 @@ func (whsvr *WebhookServer) mutate(ar *v1beta1.AdmissionReview) *v1beta1.Admissi
 	}
 
 	annotations := map[string]string{admissionWebhookAnnotationStatusKey: "refined-by-webhook"}
-	patchBytes, err := createPatch(&memcached, , annotations)
+	patchBytes, err := createPatch(&memcached, annotations)
 	if err != nil {
 		return &v1beta1.AdmissionResponse{
 			Result: &metav1.Status{
