@@ -77,7 +77,7 @@ build-linux:
 # image section
 ############################################################
 
-webhook-image: build-image push-image
+image: build-image push-image
 
 build-image: build-linux
 	@echo "Building the docker image: $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG)..."
