@@ -11,3 +11,4 @@ spec:
     targetPort: 8443
   selector:
     app: memcached-validating-webhook
+  type: NodePort

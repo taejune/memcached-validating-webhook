@@ -4,10 +4,10 @@ set -e
 
 usage() {
     cat <<EOF
-Generate certificate suitable for use with an status-management webhook service.
+Generate certificate suitable for use with an memcached-validating webhook service.
 
 This script uses k8s' CertificateSigningRequest API to a generate a
-certificate signed by k8s CA suitable for use with status-management webhook
+certificate signed by k8s CA suitable for use with memcached-validating webhook
 services. This requires permissions to create and approve CSR. See
 https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster for
 detailed explanation and additional instructions.
@@ -46,8 +46,8 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-[ -z "${service}" ] && service=status-management-webhook-svc
-[ -z "${secret}" ] && secret=status-management-webhook-certs
+[ -z "${service}" ] && service=memcached-validating-webhook-svc
+[ -z "${secret}" ] && secret=memcached-validating-webhook-certs
 [ -z "${namespace}" ] && namespace=default
 
 if [ ! -x "$(command -v openssl)" ]; then

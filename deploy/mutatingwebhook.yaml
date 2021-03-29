@@ -5,16 +5,19 @@ metadata:
   namespace: memcached
   labels:
     app: memcached-validating-webhook
+  annotations:
+    cert-manager.io/inject-ca-from: memcached/memcached-webhook-cert
 webhooks:
-- name: memcached-validating-webhook.morven.me
+- name: memcached-validating-webhook.tmax.io
   clientConfig:
     service:
-      name: memcached-validating-webhook-svc
-      namespace: memcached-validating-webhook
+      name: memcached-validating-webhook-svc.memcached.svc
+      namespace: memcached
       path: "/mutate"
-    caBundle: ${CA_BUNDLE}
+    # caBundle: ${CA_BUNDLE}
   rules:
   - operations: ["CREATE"]
     apiGroups: ["tmax.io"]
     apiVersions: ["v1alpha1"]
-    resources: ["memcacheds"]
+    resources: ["memcached"]
+    scope: "Namespaced"
