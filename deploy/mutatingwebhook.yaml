@@ -1,4 +1,4 @@
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   name: memcached-validating-webhook-cfg
@@ -11,13 +11,17 @@ webhooks:
 - name: memcached-validating-webhook.tmax.io
   clientConfig:
     service:
-      name: memcached-validating-webhook-svc.memcached.svc
+      name: memcached-validating-webhook-svc
       namespace: memcached
       path: "/mutate"
-    # caBundle: ${CA_BUNDLE}
+  sideEffects: None
+  timeoutSeconds: 5
+  admissionReviewVersions:
+    - v1
+    - v1beta1
   rules:
   - operations: ["CREATE"]
-    apiGroups: ["tmax.io"]
+    apiGroups: ["memcached.tmax.io"]
     apiVersions: ["v1alpha1"]
-    resources: ["memcached"]
+    resources: ["memcacheds"]
     scope: "Namespaced"

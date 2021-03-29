@@ -5,6 +5,7 @@ metadata:
 spec:
   secretName: memcached-validating-webhook-certs
   dnsNames:
-  - memcached-validating-webhook-svc
+  - memcached-validating-webhook-svc.memcached.svc
+  - memcached-validating-webhook-svc.memcached.svc.cluster.local
   issuerRef:
     name: ca-issuer
