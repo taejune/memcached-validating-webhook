@@ -1,20 +1,20 @@
 FROM alpine:latest
 
 # set labels for metadata
-LABEL name="memcached-validatation-webhook" \
+LABEL name="memcached-validating-webhook" \
   description="A Kubernetes mutating webhook server that implements status management" \
   summary="A Kubernetes mutating webhook server that implements status management"
 
 # set environment variables
-ENV WEBHOOK=/usr/local/bin/memcached-validatation-webhook \
+ENV WEBHOOK=/usr/local/bin/memcached-validating-webhook \
   USER_UID=1001 \
-  USER_NAME=memcached-validatation-webhook
+  USER_NAME=memcached-validating-webhook
 
 # install sidecar-injector binary
-COPY build/webhook/_output/linux/bin/memcached-validatation-webhook ${WEBHOOK}
+COPY build/_output/linux/bin/memcached-validating-webhook ${WEBHOOK}
 
 # set entrypoint
-ENTRYPOINT ["/usr/local/bin/memcached-validatation-webhook"]
+ENTRYPOINT ["/usr/local/bin/memcached-validating-webhook"]
 
 # switch to non-root user
 USER ${USER_UID}
