@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
-	tmaxv1alpha1 "github.com/taejune/memcached-operator/pkg/apis/tmax/v1alpha1"
+	tmaxv1alpha1 "github.com/taejune/memcached-operator/api/v1alpha1"
 )
 
 var (
@@ -71,7 +71,7 @@ func mutationRequired(ignoredList []string, obj *tmaxv1alpha1.Memcached) bool {
 
 	// determine whether to perform mutation based on annotation for the target resource
 	var required bool
-	if obj.Status.Status == "" {
+	if obj.Status.Phase == tmaxv1alpha1.MemcachedPhaseUndefined {
 		required = true
 	} else {
 		required = false
@@ -102,10 +102,10 @@ func updateAnnotation(target map[string]string, added map[string]string) (patch 
 	return patch
 }
 
-func updateStatus(value tmaxv1alpha1.DEPLOY_STATUS, basePath string) (patch []patchOperation) {
+func updateStatus(value tmaxv1alpha1.MemCachedPhaseType) (patch []patchOperation) {
 	patch = append(patch, patchOperation{
 		Op:    "replace",
-		Path:  basePath,
+		Path:  "/status/status",
 		Value: value,
 	})
 	return patch
@@ -115,7 +115,7 @@ func updateStatus(value tmaxv1alpha1.DEPLOY_STATUS, basePath string) (patch []pa
 func createPatch(memcached *tmaxv1alpha1.Memcached, annotations map[string]string) ([]byte, error) {
 	var patch []patchOperation
 
-	patch = append(patch, updateStatus(tmaxv1alpha1.DEPLOY_UNDEFINED, "/status/status")...)
+	// patch = append(patch, updateStatus(tmaxv1alpha1.DEPLOY_UNDEFINED)...)
 	patch = append(patch, updateAnnotation(memcached.Annotations, annotations)...)
 
 	return json.Marshal(patch)
@@ -168,6 +168,7 @@ func (whsvr *WebhookServer) mutate(ar *v1beta1.AdmissionReview) *v1beta1.Admissi
 
 // Serve method for webhook server
 func (whsvr *WebhookServer) serve(w http.ResponseWriter, r *http.Request) {
+	glog.Info("Got request....")
 	var body []byte
 	if r.Body != nil {
 		if data, err := ioutil.ReadAll(r.Body); err == nil {

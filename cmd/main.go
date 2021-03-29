@@ -18,8 +18,8 @@ func main() {
 
 	// get command line parameters
 	flag.IntVar(&parameters.port, "port", 8443, "Webhook server port.")
-	flag.StringVar(&parameters.certFile, "tlsCertFile", "/etc/webhook/certs/cert.pem", "File containing the x509 Certificate for HTTPS.")
-	flag.StringVar(&parameters.keyFile, "tlsKeyFile", "/etc/webhook/certs/key.pem", "File containing the x509 private key to --tlsCertFile.")
+	flag.StringVar(&parameters.certFile, "tlsCertFile", "/etc/webhook/certs/tls.crt", "File containing the x509 Certificate for HTTPS.")
+	flag.StringVar(&parameters.keyFile, "tlsKeyFile", "/etc/webhook/certs/tls.key", "File containing the x509 private key to --tlsCertFile.")
 	flag.Parse()
 
 	pair, err := tls.LoadX509KeyPair(parameters.certFile, parameters.keyFile)
@@ -41,6 +41,7 @@ func main() {
 
 	// start webhook server in new rountine
 	go func() {
+		glog.Infof("Listening on " + string(parameters.port))
 		if err := whsvr.server.ListenAndServeTLS("", ""); err != nil {
 			glog.Errorf("Failed to listen and serve webhook server: %v", err)
 		}
